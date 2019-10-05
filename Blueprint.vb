@@ -508,9 +508,9 @@ Public Class Blueprint
                 For j = 0 To NumberofProductionLines - 1
                     ' As we add the runs, adjust with extra runs proportionally until they are gone
                     If ExtraRuns <> 0 Then
-                        ' Since it's a fraction of a total batch run, this will always just be one until gone ** not right?
+                        ' Since it's a fraction of a total batch run, this will always just be one until gone 
                         AdjRunsperBP = RunsPerLine + 1
-                        ExtraRuns = ExtraRuns - 1 ' Adjust extra
+                        ExtraRuns = ExtraRuns - 1 ' Adjust extra runs
                     Else
                         ' No extra runs, so just add the original runs now
                         AdjRunsperBP = RunsPerLine
