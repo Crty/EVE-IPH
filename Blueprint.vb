@@ -791,12 +791,12 @@ Public Class Blueprint
 
             Next
 
-            '' Add any items that are not built but could be to the raw list
-            'For j = 0 To ComponentMaterials.GetMaterialList.Count - 1
-            '    If ComponentMaterials.GetMaterialList(j).GetBuildItem = False And ComponentMaterials.GetMaterialList(j).GetItemME <> "-" Then
-            '        Call RawMaterials.InsertMaterial(ComponentMaterials.GetMaterialList(j))
-            '    End If
-            'Next
+            ' Add any items that are not built but could be to the raw list
+            For j = 0 To ComponentMaterials.GetMaterialList.Count - 1
+                If ComponentMaterials.GetMaterialList(j).GetBuildItem = False And ComponentMaterials.GetMaterialList(j).GetItemME <> "-" And BuildBuy Then
+                    Call RawMaterials.InsertMaterial(ComponentMaterials.GetMaterialList(j))
+                End If
+            Next
 
             ' Update the bp production time to equal the longest runs per line times the number of batches - add in copy and invention time if we invented (totaled up in invention function)
             BPProductionTime = (BPProductionTime * Batches) + CopyTime + InventionTime
@@ -844,7 +844,7 @@ Public Class Blueprint
         Dim TempNumBPs As Integer = 1
 
         Dim SaveExcessMats As Boolean = True
-        Dim BuildCost As Double = -1
+        Dim SingleRunBuildCost As Double = -1
 
         ' Select all materials to buid this BP
         SQL = "SELECT ABM.BLUEPRINT_ID, MATERIAL_ID, QUANTITY, MATERIAL, MATERIAL_CATEGORY, ACTIVITY, "
@@ -882,21 +882,21 @@ Public Class Blueprint
 
                 ' Set the quantity: required = max(runs,ceil(round(runs * baseQuantity * materialModifier,2))
                 CurrentMatQuantity = CLng(Math.Max(UserRuns, Math.Ceiling(Math.Round(UserRuns * CurrentMaterial.GetQuantity * SetBPMaterialModifier(), 2))))
+                ' Update the quantity - just add the negative percent of the ME modifier to 1 and multiply
+                Call CurrentMaterial.SetQuantity(CurrentMatQuantity)
 
+                Dim AdjCurrentMatQuantity As Long = CurrentMatQuantity
                 ' Before going any further, see if we have this material in excess materials and if so, adjust the quantity in excess and either build the remaining or exit this material processing
-                SaveExcessMats = UseExcessMaterials(ExcessBuiltItems, CurrentMaterial, CurrentMatQuantity)
+                SaveExcessMats = UseExcessMaterials(ExcessBuiltItems, CurrentMaterial, AdjCurrentMatQuantity)
 
                 If Not IsDBNull(readerBP.GetValue(11)) Then
                     ComponentBPPortionSize = readerBP.GetInt64(11)
                     ' Divide by the portion size if this item has one (component buildable) for the build quantity
-                    BuildQuantity = CLng(Math.Ceiling(CurrentMatQuantity / ComponentBPPortionSize))
+                    BuildQuantity = CLng(Math.Ceiling(AdjCurrentMatQuantity / ComponentBPPortionSize))
                 Else
-                    BuildQuantity = CurrentMatQuantity
+                    BuildQuantity = AdjCurrentMatQuantity
                     ComponentBPPortionSize = 1
                 End If
-
-                ' Update the quantity - just add the negative percent of the ME modifier to 1 and multiply
-                Call CurrentMaterial.SetQuantity(CurrentMatQuantity)
 
                 Dim UsesReactions As Boolean = False
                 ' See what material type this is and if we want to build it (reactions)
@@ -1034,8 +1034,8 @@ Public Class Blueprint
                                     End If
                             End Select
 
-                            BuildCost = ComponentBlueprint.GetRawMaterials.GetTotalMaterialsCost / BuildQuantity
-                            CurrentMaterial.SetBuildCost(BuildCost)
+                            SingleRunBuildCost = ComponentBlueprint.GetRawMaterials.GetTotalMaterialsCost / BuildQuantity
+                            CurrentMaterial.SetBuildCostPerItem(SingleRunBuildCost)
 
                             ' Set the name of the material to include the build runs
                             CurrentMaterial.SetName(CurrentMaterial.GetMaterialName & " (Runs: " & CStr(BuildQuantity) & ")")
@@ -1079,7 +1079,8 @@ Public Class Blueprint
 
                         ' Use the build cost for the material if the item quantity doesn't match portion size, and insert all components into the build/buy list
                         If CurrentMatQuantity <> BuildQuantity Then
-                            ComponentMaterials.InsertMaterial(CurrentMaterial, BuildCost)
+                            ' Override the total build cost (which for this is the number of runs we need and the cost of each) mostly for items with portion sizes
+                            ComponentMaterials.InsertMaterial(CurrentMaterial, SingleRunBuildCost * BuildQuantity)
                         Else
                             ComponentMaterials.InsertMaterial(CurrentMaterial)
                         End If

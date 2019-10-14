@@ -326,8 +326,6 @@ Public Module Public_Variables
         Dim BuyType As String
     End Structure
 
-
-
     ' For updating the splash screen with what is going on
     Private Delegate Sub ProgressSetter(ByVal progress As String)
 
@@ -984,7 +982,7 @@ InvalidDate:
                     .BlueprintTypeID = SentBlueprint.GetTypeID
                     .TypeID = SentBlueprint.GetItemID
                     .Name = SentBlueprint.GetItemData.GetMaterialName
-                    .Quantity = SentBlueprint.GetItemData.GetQuantity
+                    .Runs = SentBlueprint.GetItemData.GetQuantity
                     .ItemME = SentBlueprint.GetME
                     .ItemTE = SentBlueprint.GetTE
                     .ManufacturingFacilityMEModifier = SLFacility.BaseME ' For full item, components will be saved in blueprint class for ComponentList
@@ -1029,7 +1027,7 @@ InvalidDate:
                     .BlueprintTypeID = SentBlueprint.GetTypeID
                     .TypeID = SentBlueprint.GetItemID
                     .Name = SentBlueprint.GetItemData.GetMaterialName
-                    .Quantity = SentBlueprint.GetItemData.GetQuantity
+                    .Runs = SentBlueprint.GetItemData.GetQuantity
                     .ItemME = SentBlueprint.GetME
                     .ItemTE = SentBlueprint.GetTE
                     .ManufacturingFacilityMEModifier = SLFacility.BaseME  ' For full item, components will be saved in blueprint class for ComponentList
@@ -1781,7 +1779,6 @@ InvalidDate:
             ' Refresh the lists
             Call frmShop.RefreshLists()
         End If
-
     End Sub
 
     ' Deletes all the public structures from the stations table
